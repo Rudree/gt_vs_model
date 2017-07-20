@@ -7,14 +7,21 @@ from pytz import timezone
 from pandas_ml import ConfusionMatrix
 from sklearn.metrics import classification_report
 
+print("------------------------------------------------")
+print("gt_vs_occupancy_model.py")
 print("--------------")
-print("Reading the two datafiles")
-input_str=sys.argv[1]+" "+sys.argv[2]
+print("Reading the two datafiles...")
+input_str=sys.argv[1]+" "+sys.argv[2]+" "+sys.argv[3]
 model_A = pd.read_csv(input_str.split(" ")[0])
 model_B = pd.read_csv(input_str.split(" ")[1])
 
 print("Initial length of ",input_str.split(" ")[0],":",len(model_A))
 print("Initial length of ",input_str.split(" ")[1],":",len(model_B))
+
+mode=input_str.split(" ")[2]
+if(mode != "per_event" and mode != "continuous"):
+    print("Wrong mode. Per-event set by default.")
+    mode = "per_event"
 print("--------------")
 
 def reshape_GT(m):
@@ -67,12 +74,12 @@ def reshape_GT(m):
 def check_for_GT(m):
     if ( "space_name" not in m.columns.tolist() ):
         #reshape GT to match occupancy model file
-        print("Reshaping Ground Truth file")
+        print("Reshaping Ground Truth file...")
         m = reshape_GT(m)
     else:
         if ( "occurred_at" not in m.columns.tolist() ):
             #resolve column name typo and drop unwanted columns
-            print("Remove UNKNOWN and correct typos ")
+            print("Remove UNKNOWN and correct typos...")
             m = m.rename(columns={'occured_at': 'occurred_at'})
             unwanted_columns = filter(lambda c: not c  in ["space_name", "occurred_at", "state"], m.columns.tolist())
             m.drop(unwanted_columns, axis=1, inplace=True)
@@ -93,15 +100,17 @@ print("Length of ",input_str.split(" ")[0],":",len(model_A))
 print("Length of ",input_str.split(" ")[1],":",len(model_B))
 
 print("--------------")
-print("Drop some duplicates due to pulse...")
-model_A = model_A.drop_duplicates(subset=["space_name","occurred_at"], keep='last')
-if("m4" not in input_str.split(" ")[1]):
-    model_B = model_B.drop_duplicates(subset=["space_name","occurred_at"], keep='last')
-else:
-    model_B= model_B.groupby(["space_name","occurred_at"], as_index=False).apply(lambda x: x if len(x)==1 else x.iloc[[-2]]).reset_index(level=0, drop=True)
-
-print("Length of ",input_str.split(" ")[0]," after dropping duplicates:",len(model_A))
-print("Length of ",input_str.split(" ")[1]," after dropping duplicates:",len(model_B))
+if (mode == "per_event"):
+    print("Drop some duplicates due to pulse...")
+    model_A = model_A.drop_duplicates(subset=["space_name","occurred_at"], keep='last')
+    if("m4" not in input_str.split(" ")[1]):
+        model_B = model_B.drop_duplicates(subset=["space_name","occurred_at"], keep='last')
+    else:
+        model_B= model_B.groupby(["space_name","occurred_at"], as_index=False).apply(lambda x: x if len(x)==1 else x.iloc[[-2]]).reset_index(level=0, drop=True)
+    print("Length of ",input_str.split(" ")[0]," after dropping duplicates:",len(model_A))
+    print("Length of ",input_str.split(" ")[1]," after dropping duplicates:",len(model_B))
+elif(mode == "continuous"):
+    print("Keep all pulse events for comparison...")
 
 print("Rooms in Model A: ", model_A.space_name.unique())
 print("Rooms in Model B: ", model_B.space_name.unique())
@@ -112,12 +121,13 @@ def merge_dfs():
     return pd.merge(left = model_A, right = model_B, left_on=['space_name', 'occurred_at'], right_on = ['space_name', 'occurred_at'], how='inner',suffixes=['_Model_A', '_Model_B'] )
 
 print("--------------")
-print("Merge model A with model B")
+print("Merge model A with model B...")
 df = merge_dfs()
+#df.to_csv("Merged_output.csv")
 print("Length of the merged file: ", len(df))
 
 print("--------------")
-print("Get Accuracy results")
+print("Get Accuracy results...")
 y_true = df['state_Model_A'].tolist()
 y_pred = df['state_Model_B'].tolist()
 
