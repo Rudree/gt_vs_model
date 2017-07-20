@@ -20,7 +20,7 @@ print("Initial GT2 length: ", len(GT2))
 print("GT merged length: ", len(GT0))
 
 # remove potential duplicates
-GT0=GT0.drop_duplicates().drop_duplicates(subset=["occurred_at"], keep='first')
+GT0=GT0.drop_duplicates().drop_duplicates(subset=["occurred_at"], keep='last')
 print("GT merged lengh without duplicates: ", len(GT0))
 GT0=GT0.reset_index()
 
