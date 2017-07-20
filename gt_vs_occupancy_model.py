@@ -120,8 +120,24 @@ def merge_dfs():
     model_B.sort_values( by= ['occurred_at'], ascending=True)
     return pd.merge(left = model_A, right = model_B, left_on=['space_name', 'occurred_at'], right_on = ['space_name', 'occurred_at'], how='inner',suffixes=['_Model_A', '_Model_B'] )
 
+
+def check_for_m4(m):
+    # read the TLM model
+    model_C = pd.read_csv("occupancy_results_m3.csv")
+    model_C = check_for_GT(model_C)
+    model_C = model_C.drop_duplicates(subset=["space_name","occurred_at"], keep='last')
+    # select unique timestamp in TLM
+    list_timestamps=model_C["occurred_at"].unique()
+    # keep only these timestamps in the HMM
+    m=m[m["occurred_at"].isin(list_timestamps)]
+    return m
+
 print("--------------")
 print("Merge model A with model B...")
+if("m4" in input_str.split(" ")[0]):
+    model_A=check_for_m4(model_A)
+elif("m4" in input_str.split(" ")[1]):
+    model_B=check_for_m4(model_B)
 df = merge_dfs()
 #df.to_csv("Merged_output.csv")
 print("Length of the merged file: ", len(df))
