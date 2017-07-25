@@ -12,7 +12,7 @@ print "------------------------------------------------"
 print "gt_vs_occupancy_MODEl.py"
 print "--------------"
 print "Reading the two datafiles..."
-sys.argv = ['run', 'GT.csv', 'occupancy_results_m4.csv', 'continuous']
+
 INPUT_STR = sys.argv[1] + " "+sys.argv[2] + " " + sys.argv[3]
 MODEL_A = pd.read_csv(INPUT_STR.split(" ")[0])
 MODEL_B = pd.read_csv(INPUT_STR.split(" ")[1])
